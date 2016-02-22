@@ -10,6 +10,11 @@ import './api/index.js';
 
 var running = false;
 
+/**
+ * @param {Function} [onSuccess]
+ * @param {Function} [onError]
+ * @returns {Promise}
+ */
 export function start(onSuccess, onError) {
 
 	if (running) {
@@ -44,6 +49,11 @@ export function start(onSuccess, onError) {
 
 }
 
+/**
+ * @param {Function} [onSuccess]
+ * @param {Function} [onError]
+ * @returns {Promise}
+ */
 export function stop(onSuccess, onError) {
 
 	if (!running) {

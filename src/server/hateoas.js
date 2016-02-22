@@ -1,7 +1,7 @@
 /* global */
 'use strict';
 
-import Hateoas from 'express-hateoas';
+import Hateoas from 'express-hateoas/src/main/hateoas';
 
 import express from './express';
 

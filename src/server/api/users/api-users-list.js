@@ -12,24 +12,35 @@ const operation = resource.GET().as('json');
 const cipher_list = '' +
 	'MATCH (node:User),(user:User)' +
 	'  WHERE id(user) = {userId}' +
-	'  AND (node) - [:Requires] -> (:Permission) <- [:Possesses] - (user)' +
+	'  AND (' +
+	'    (node) - [:requires] -> (:Permission) <- [:possesses] <- (user) OR' +
+	'    (node) - [:requires] -> (:Permission) <- [:implies] <- (:Permission) <- [:posesses] - (user)' +
+	'  )' +
 	'  XOR NOT (node) - [:Requires] -> (:Permission)' +
 	'  RETURN id(node);';
 
 export const name = 'list';
 
+operation.permission = `/api/users[${name}]`;
+
 operation.validator = (c) => {
 	return {
+
+		session: {
+			user: {
+				permissions: [
+					c.required,
+					c.contains(operation.permission)
+				]
+			}
+		}
+
 	};
 };
 
 operation.handler = (request, response, params) => {
 
-	const userId = request.session.user && request.session.user.id;
-
-	if (!userId) {
-		return response.status(401).json({});
-	}
+	const userId = params.session.user.id;
 
 	return query(cipher_list, {
 		userId: userId
