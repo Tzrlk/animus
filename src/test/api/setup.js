@@ -26,24 +26,17 @@ before(() => {
 
 });
 
-let resolveTransaction;
-let rejectTransaction;
-
-export let transaction = new Promise((resolve, reject) => {
-	resolveTransaction = resolve;
-	rejectTransaction = reject;
-});
+let transactionId;
 
 beforeEach(() => {
 
 	request.jar();
 
-	return transaction = neo4j().then((connection) => {
+	return neo4j().then((connection) => {
 		return connection.begin();
 
 	}).then((response) => {
-		const transactionId = response[1].transactionId;
-		resolveTransaction(transactionId);
+		transactionId = response[1]['transactionId'];
 
 	});
 
@@ -52,9 +45,8 @@ beforeEach(() => {
 afterEach(() => {
 
 	return neo4j().then((connection) => {
-		return transaction.then((transactionId) => {
-			return connection.rollback(transactionId);
-		});
+		connection.rollback(transactionId);
+		return Promise.resolve();
 	});
 
 });

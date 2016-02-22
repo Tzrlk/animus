@@ -15,7 +15,7 @@ let FileStore = fileStore(session);
 let app = express();
 
 app.use(errorHandler());
-app.use(bodyParser());
+app.use(bodyParser.json());
 app.use(helmet());
 
 app.use(session({
