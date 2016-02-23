@@ -1,4 +1,4 @@
-/* globals console */
+/* globals console, JSON */
 'use strict';
 
 import _ from 'underscore';
@@ -17,10 +17,8 @@ const cipher_login = '' +
 	'  RETURN user;';
 
 const cipher_permissions = '' +
-	'MATCH (user:User { email: {email} }),(permission:Permission)' +
-	'  WHERE (user) - [:Possesses] -> (permission)' +
-	'     OR (user) - [:Possesses] -> (:Permission) - [:Implies*] -> (permission)' +
-	'  RETURN permission;';
+	'MATCH (user:User{ email: {email} }) - [*] -> (permission:Permission)' +
+	'   RETURN permission;';
 
 operation.validator = (c) => {
 	return {
@@ -73,6 +71,8 @@ operation.handler = (request, response, params) => {
 
 		}).getResults('permission').then((results) => {
 
+			console.info(`Permissions extracted from database: ${JSON.stringify(results)}`);
+
 			principle.permissions = results.map((result) => result.name);
 
 			principle.token = crypto.createHash('md5')
@@ -81,6 +81,7 @@ operation.handler = (request, response, params) => {
 
 			// This is where the user is loaded into the session.
 			request.session.user = principle;
+			console.info(`User principle added to session: ${JSON.stringify(principle)}`);
 
 			return response.status(httpConst.codes.OK).json(principle);
 
