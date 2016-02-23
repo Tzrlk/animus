@@ -10,9 +10,8 @@ import '../../prototypes.js'
 const operation = resource.GET().as('json');
 
 const cipher_list = '' +
-	'MATCH (node:User),(user:User)' +
-	'  WHERE id(user) = {userId}' +
-	'  AND (' +
+	'MATCH (node:User),(user:User { email: {userEmail} })' +
+	'  WHERE (' +
 	'    (node) - [:requires] -> (:Permission) <- [:possesses] <- (user) OR' +
 	'    (node) - [:requires] -> (:Permission) <- [:implies] <- (:Permission) <- [:posesses] - (user)' +
 	'  )' +
@@ -25,25 +24,15 @@ operation.permission = `/api/users[${name}]`;
 
 operation.validator = (c) => {
 	return {
-
-		session: {
-			user: {
-				permissions: [
-					c.required,
-					c.contains(operation.permission)
-				]
-			}
-		}
-
 	};
 };
 
 operation.handler = (request, response, params) => {
 
-	const userId = params.session.user.id;
+	const userId = params.session.principle.email;
 
 	return query(cipher_list, {
-		userId: userId
+		userEmail: email
 
 	}).then(function(results) {
 

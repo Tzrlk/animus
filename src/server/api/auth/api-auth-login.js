@@ -16,6 +16,12 @@ const cipher_login = '' +
 	'MATCH (user:User { email: {email} })' +
 	'  RETURN user;';
 
+const cipher_permissions = '' +
+	'MATCH (user:User { email: {email} }),(permission:Permission)' +
+	'  WHERE (user) - [:Possesses] -> (permission)' +
+	'     OR (user) - [:Possesses] -> (:Permission) - [:Implies*] -> (permission)' +
+	'  RETURN permission;';
+
 operation.validator = (c) => {
 	return {
 
@@ -45,37 +51,49 @@ operation.handler = (request, response, params) => {
 	return query(cipher_login, {
 		email: email
 
-	}).then(function(results) {
+	}).getResult('user').then(function(result) {
 
-		//console.info(JSON.stringify(results, null, '\t'));
-
-		const result = _.first(_.first(_.first(results)));
-
-		if (!result || !result.user) {
-			console.info(`Couldn't find user for email ${email}`);
-			return response.status(httpConst.codes.NOT_FOUND).json({});
-		}
-
-		const user = _.extend({}, result.user, {
-			id: result.user._id
-		});
+		const principle = {
+			name: result['name'],
+			email: result['email']
+		};
 
 		// run crypto hash on supplied password.
 		const hash = crypto.createHash('md5')
 				.update(password)
 				.digest('hex');
 
-		if (hash !== user.password) {
+		if (hash !== result['password']) {
 			console.info(`Couldn't validate user's password`);
 			return response.status(httpConst.codes.UNAUTHORIZED).json({});
 		}
 
-		user.token = crypto.createHash('md5')
-				.update(user.email + hash)
-				.digest('hex');
+		return query(cipher_permissions, {
+			email: principle.email
 
-		request.session.user = user;
-		return response.status(httpConst.codes.OK).json(user);
+		}).getResults('permission').then((results) => {
+
+			principle.permissions = results.map((result) => result.name);
+
+			principle.token = crypto.createHash('md5')
+					.update(principle.email + hash)
+					.digest('hex');
+
+			// This is where the user is loaded into the session.
+			request.session.user = principle;
+
+			return response.status(httpConst.codes.OK).json(principle);
+
+		}, (error) => {
+			console.info(JSON.stringify(error, null, '\t'));
+		});
+
+	}, (error) => {
+
+		if (error && error.name && error.name === 'NotFoundError') {
+			console.info(`Couldn't find user for email ${email}`);
+			return response.status(httpConst.codes.NOT_FOUND).json({});
+		}
 
 	});
 

@@ -1,4 +1,4 @@
-/* global describe, it */
+/* global describe, it, before, JSON, console */
 'use strict';
 
 import chai from 'chai';
@@ -95,19 +95,30 @@ describe('POST:/auth', () => {
 		let result = null;
 
 		before(() => {
-			return request('email@somewhere.com', 'password').then((response) => {
-				result = response;
+
+			result = request('email@somewhere.com', 'password')
+					.then((response) => response.body);
+
+			return result.then((principle) => {
+				expect(principle).to.exist;
 			});
+
 		});
 
 		it('should not have a password listed.', () => {
-			expect(result.password).to.not.exist;
+			return result.then((principle) => {
+				expect(principle.password).to.not.exist;
+
+			});
 		});
 
 		it('should have a list of user permissions', () => {
-			expect(result.permissions).to.exist;
-			expect(result.permissions).to.be.an('array');
-			expect(result.permissions.length).to.be.greaterThan(0);
+			return result.then((principle) => {
+				expect(principle.permissions).to.exist;
+				expect(principle.permissions).to.be.an('array');
+				expect(principle.permissions.length).to.be.greaterThan(0);
+
+			});
 		});
 
 	});
