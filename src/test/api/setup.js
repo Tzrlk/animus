@@ -7,7 +7,8 @@ import { start as serverStart, stop as serverStop } from '../../server/server.js
 
 export const baseurl = 'http://localhost:8000/api';
 
-export const request = req.defaults({
+export const requestPromise = req;
+export let request = req.defaults({
 	resolveWithFullResponse: true,
 	simple: false,
 	json: true,
@@ -26,11 +27,18 @@ before(() => {
 
 });
 
-let transactionId;
+export let transactionId;
+export let cookieJar;
 
 beforeEach(() => {
 
-	request.jar();
+	cookieJar = request.jar();
+	request = req.defaults({
+		resolveWithFullResponse: true,
+		simple: false,
+		json: true,
+		jar: cookieJar
+	});
 
 	return neo4j().then((connection) => {
 		return connection.begin();

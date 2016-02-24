@@ -17,6 +17,16 @@ export const request = (email, password) => {
 		uri: `${setup.baseurl}/auth`,
 		method: 'PUT',
 		body: body
+
+	}).then((response) => {
+
+		if (response.headers['set-cookie'] && response.headers['set-cookie'].length > 0) {
+			const cookie = setup.requestPromise.cookie(response.headers['set-cookie'][0]);
+			setup.cookieJar.setCookie(cookie, setup.baseurl + '_session');
+		}
+
+		return response;
+
 	});
 
 };

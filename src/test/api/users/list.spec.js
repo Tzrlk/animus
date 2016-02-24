@@ -9,12 +9,8 @@ import { request as login } from '../auth/login.spec.js';
 
 export const request = () => {
 	return setup.request({
-		resolveWithFullResponse: true,
 		uri: `${setup.baseurl}/users`,
-		method: 'GET',
-		simple: false,
-		json: true,
-		jar: true
+		method: 'GET'
 	});
 };
 

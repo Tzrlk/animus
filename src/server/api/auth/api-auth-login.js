@@ -6,9 +6,9 @@ import crypto from 'crypto';
 import httpConst from 'http-constants';
 
 import resource from './api-auth-resource.js';
-import query from '../../neo4j.js'
+import query from '../../neo4j.js';
 
-import '../../prototypes.js'
+import '../../prototypes.js';
 
 const operation = resource.PUT().as('json');
 
@@ -80,7 +80,7 @@ operation.handler = (request, response, params) => {
 					.digest('hex');
 
 			// This is where the user is loaded into the session.
-			request.session.user = principle;
+			request.session.principle = principle;
 			console.info(`User principle added to session: ${JSON.stringify(principle)}`);
 
 			return response.status(httpConst.codes.OK).json(principle);
