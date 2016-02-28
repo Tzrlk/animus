@@ -7,6 +7,7 @@ import httpConst from 'http-constants';
 
 import resource from './api-auth-resource.js';
 import query from '../../neo4j.js';
+import { encrypt } from '../../prototypes.js';
 
 import '../../prototypes.js';
 
@@ -57,9 +58,7 @@ operation.handler = (request, response, params) => {
 		};
 
 		// run crypto hash on supplied password.
-		const hash = crypto.createHash('md5')
-				.update(password)
-				.digest('hex');
+		const hash = encrypt('md5', password, principle.email);
 
 		if (hash !== result['password']) {
 			console.info(`Couldn't validate user's password`);
@@ -74,10 +73,6 @@ operation.handler = (request, response, params) => {
 			console.info(`Permissions extracted from database: ${JSON.stringify(results)}`);
 
 			principle.permissions = results.map((result) => result.name);
-
-			principle.token = crypto.createHash('md5')
-					.update(principle.email + hash)
-					.digest('hex');
 
 			// This is where the user is loaded into the session.
 			request.session.principle = principle;

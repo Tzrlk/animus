@@ -65,3 +65,13 @@ export function protoChain(object = this) {
 }
 
 softSet(Object.prototype, 'protoChain', protoChain);
+
+export function encrypt() {
+	const encryption = crypto.createHash(arguments[0]);
+
+	arguments.slice(1).forEach((value) => {
+		encryption.update(value);
+	});
+
+	return encryption.digest('hex');
+}

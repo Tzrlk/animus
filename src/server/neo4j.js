@@ -28,10 +28,12 @@ export function connect() {
 	});
 }
 
-// TODO: Get transaction id in here somewhere.
-export default function query(query, params) {
+
+export default function query(query, params, transactionId) {
 	return connect().then((db) => {
-		return db.query(query, params);
+		return transactionId
+			? db.query(transactionId, query, params)
+			: db.query(query, params);
 	});
 }
 

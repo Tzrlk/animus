@@ -2,79 +2,62 @@
 
 import _ from 'underscore';
 
-import '../../prototypes.js'
+import { encrypt } from '../../prototypes.js';
 import resource from './api-users-resource.js';
 
 let cipher = '' +
-	'MATCH (creator:User { _id: {userId} }),(createPermission:Permission { name: \'users-create\' })' +
-	'CREATE (node:User)' +
-	'  WHERE id(user) = {userId}' +
-	'  AND id(node) = {nodeId}' +
-	'  AND (node) - [:Requires] -> (:Permission) <- [:Possesses] - (user)' +
-	'  XOR NOT (node) - [:Requires] -> (:Permission)' +
-	'  SET {properties}' +
-	'  RETURN id(node);';
+	'CREATE (node:User {\n' +
+	'    email: {email},\n' +
+	'    password: {password},\n' +
+	'    name: {name}\n' +
+	'})\n' +
+	'RETURN id(user) as userId;';
 
 export const name = 'create';
 
-const method = resource.POST().as('json');
+const operation = resource.POST().as('json');
 
-method.validator = (data) => {
-	return suit.fit((c) => {
-		return {
+operation.validator = (c) => {
+	return {
 
-			session: {
-				user: {
-					id: [
-						c.required,
-						c.integer
-					]
-				}
-			},
-
-			body: {
-				name: [
-					c.string,
+		session: {
+			user: {
+				email: [
+					c.email,
 					c.required
 				]
 			}
+		},
+
+		body: {
+
+			email: [
+				c.email,
+				c.required
+			],
+
+			password: [
+				c.string,
+				c.required
+			],
+
+			name: [
+				c.string
+			]
 
 		}
-	});
+
+	};
 };
 
-method.handler = function(request, response, params) {
+operation.handler = function(request, response, params) {
 
-	const properties = new Map(params.filter(function(key) {
-		return key in [ 'name' ]
-	}));
+	return query(cipher, params.body).getResult('userId').then(function(userId) {
 
-	query(cipher, {
-		userId: session.user.id,
-		properties: properties
+		return response.status(200).links({
+			result: `${resource.path}/${userId}`
 
-	}).then(function(results) {
-
-		if (!results || !results[0]) {
-			response.status(500);
-			response.json({
-				message: 'Couldn\'t insert record for some reason.'
-			});
-		}
-
-		const userId = results._id;
-
-		response.status(200);
-		response.json({
-			link: `${resource.path}/${userId}`
-		});
-
-	}).catch((error) => {
-
-		response.status(500);
-		response.json({
-			message: error.message
-		});
+		}).json({});
 
 	});
 

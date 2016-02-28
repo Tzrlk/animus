@@ -2,10 +2,10 @@
 
 import chai from 'chai';
 
-
 import * as setup from '../setup.js';
 import { request as login } from '../auth/login.spec.js';
 import neo4j from '../../../server/neo4j.js';
+import { encrypt } from '../../../server/prototypes.js';
 
 const expect = chai.expect;
 
@@ -30,20 +30,23 @@ describe("POST:/users", () => {
 
 	describe('When logged-in', () => {
 
+		const cypher_createadmin = '' +
+				'MATCH (p:Permission { name: "/users[create]" })\n' +
+				'CREATE (user:User { \n' +
+				'    email: {email},\n' +
+				'    password: {password}\n' +
+				'}) - [:Possesses] -> (p)\n' +
+				'RETURN user;';
+
 		let promise;
 
 		beforeEach(() => {
-			return promise = neo4j(
-					'MATCH (p:Permission { name: "/users[create]" }) ' +
-					'CREATE (user:User { email: {email}, password: {password} }) - [:Possesses] -> (p)' +
-					'RETURN user;',
-					{
-						email: 'admin@somewhere.com',
-						password: 'password' // need to encrypt this.
-					}
+			return promise = neo4j(cypher_createadmin, {
+				email: 'admin@somewhere.com',
+				password: encrypt('md5', 'password', 'admin@somewhere.com')
 
-			).getResult('user').then((user) => {
-				return login(user.email, user.password);
+			}, setup.transactionId).getResult('user').then((user) => {
+				return login(user['email'], user['password']);
 
 			});
 		});
