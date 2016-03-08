@@ -2,52 +2,59 @@
 'use strict';
 
 import _ from 'underscore';
-import crypto from 'crypto';
 
+import { encrypt } from '../../prototypes.js';
 import resource from './api-auth-resource.js';
 
-import '../../prototypes.js'
-import query from '../../neo4j.js'
+import query from '../../neo4j.js';
+
+export const name = 'create';
 
 const operation = resource.POST().as('json');
 
-let cipher = '' +
-	'MATCH (user:User { email: {email} })' +
-	'  RETURN user;';
+operation.validator = (c) => {
+	return {
 
-let whitelist = [
-	'name'
-];
+		body: {
 
-operation.validator = (data) => {
-	return suit.fit(data, (c) => {
-		return {
+			email: [
+				c.email,
+				c.required
+			],
 
-			body: {
-				email: [
-					c.email,
-					c.required
-				],
+			callback: [
+				c.url,
+				c.required
+			]
 
-				password: [
-					c.string,
-					c.required
-				]
-			}
+		}
 
-		};
-	});
+	};
 };
 
 operation.handler = (request, response, params) => {
 
-	// TODO: Query the database for conflicts
+	const recovery = encrypt('md5', params.body.email, new Date().getMilliseconds());
 
-	// TODO: Create the User with validation = new guid.
+	return query('' +
+			'CREATE (node:User {\n' +
+			'    email: {email},\n' +
+			'    recovery: {recovery},\n' +
+			'})\n' +
+			'RETURN user.email as email;', {
+		email: params.body.email,
+		recovery: recovery
 
-	// TODO: Send email to validate address with callback to /auth/validate
+	}).getResult('email').then(function(email) {
 
-	response.status = 201;
+		// TODO: send email to email address with password embedded in it.
+
+		return response.status(200).links({
+			login: `${resource.path}?email=${email}`
+
+		}).json({});
+
+	});
 
 };
 
