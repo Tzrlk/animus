@@ -73,14 +73,15 @@
     "express-hateoas": "0.1.x",
     "express-session": "^1.11.3",
     "helmet": "^0.9.1",
+    "http-constants": "1.1.x",
     "jade": "^1.11.0",
     "neo4j-simple": "^0.7.12",
     "node-sass": "^3.3.3",
+    "nodemailer": "^2.3.0",
     "session-file-store": "0.0.14",
     "traceur": "0.0.102",
     "traceur-runner": "^2.0.1",
     "traceur-source-maps": "^1.0.6",
-    "underscore": "^1.8.3",
-    "http-constants": "1.1.x"
+    "underscore": "^1.8.3"
   }
 }

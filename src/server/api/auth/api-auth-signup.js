@@ -4,6 +4,7 @@
 import _ from 'underscore';
 
 import { encrypt } from '../../prototypes.js';
+import email from '../../email.js';
 import resource from './api-auth-resource.js';
 
 import query from '../../neo4j.js';
@@ -47,12 +48,20 @@ operation.handler = (request, response, params) => {
 
 	}).getResult('email').then(function(email) {
 
-		// TODO: send email to email address with password embedded in it.
+		return email({
+			to: email,
+			subject: 'Animus: Email Verification',
+			text: `Verify your account here: ${resource.path}`,
+			html: `Verify your account here: <a>${resource.path}</a>`
 
-		return response.status(200).links({
-			login: `${resource.path}?email=${email}`
+		}).then((info) => {
 
-		}).json({});
+			return response.status(200).links({
+				login: `${resource.path}?email=${email}`
+
+			}).json({});
+
+		});
 
 	});
 

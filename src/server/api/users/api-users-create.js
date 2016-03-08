@@ -5,7 +5,7 @@ import _ from 'underscore';
 import { encrypt } from '../../prototypes.js';
 import resource from './api-users-resource.js';
 
-let cipher = '' +
+let cypher_createUser = '' +
 	'CREATE (node:User {\n' +
 	'    email: {email},\n' +
 	'    password: {password},\n' +
@@ -52,7 +52,14 @@ operation.validator = (c) => {
 
 operation.handler = function(request, response, params) {
 
-	return query(cipher, params.body).getResult('userId').then(function(userId) {
+	const hash = encrypt.pwdv1(params.body.email, params.body.password);
+
+	return query(cypher_createUser, {
+		email: params.body.email,
+		name: params.body.name,
+		password: hash
+
+	}).getResult('userId').then(function(userId) {
 
 		return response.status(200).links({
 			result: `${resource.path}/${userId}`

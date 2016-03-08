@@ -75,3 +75,7 @@ export function encrypt() {
 
 	return encryption.digest('hex');
 }
+
+encrypt.pwdv1 = (email, password) => {
+	return encrypt('md5', email, password);
+};

@@ -58,7 +58,7 @@ operation.handler = (request, response, params) => {
 		};
 
 		// run crypto hash on supplied password.
-		const hash = encrypt('md5', password, principle.email);
+		const hash = encrypt.pwdv1(principle.email, password);
 
 		if (hash !== result['password']) {
 			console.info(`Couldn't validate user's password`);
@@ -72,7 +72,7 @@ operation.handler = (request, response, params) => {
 
 			console.info(`Permissions extracted from database: ${JSON.stringify(results)}`);
 
-			principle.permissions = results.map((result) => result.name);
+			principle.permissions = results.map((result) => result['name']);
 
 			// This is where the user is loaded into the session.
 			request.session.principle = principle;
