@@ -1,11 +1,8 @@
 /* globals require, process, __dirname */
 
-var _ = require('underscore');
-
 import config from './config';
 import http from './http';
 import express from './express.js';
-import rest from './hateoas';
 import './api/index.js';
 
 var running = false;
