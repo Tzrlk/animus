@@ -1,32 +1,38 @@
-/* globals require, module, __dirname */
+/* globals __dirname, process */
 
-export default {
+import vodoun from 'vodoun';
 
-	path: {
+export default vodoun.register('config', [], (service) => {
+
+	service.path = {
 		base: __dirname
-	},
+	};
 
-	debug: process.env['production']
-		? process.env['production'] !== 'true'
-		: true,
+	service.debug = process.env['production']
+			? process.env['production'] !== 'true'
+			: true;
 
-	hostname: process.env['HOST'] || 'localhost',
+	service.hostname = process.env['HOST']
+		|| 'localhost';
 
-	port: process.env['PORT'] || 8000,
-	database: {
+	service.port = process.env['PORT']
+		|| 8000;
+
+	service.database = {
 		url: process.env['GRAPHENEDB_URL']
 			|| 'http://neo4j:password@localhost:7474'
-	},
+	};
 
-	session: {
-		secret: process.env['SECRET'] || 'secret'
-	},
+	service.session = {
+		secret: process.env['SECRET']
+			|| 'secret'
+	};
 
-	timeout: {
+	service.timeout = {
 		exit: 5000
-	},
+	};
 
-	constant: {
+	service.constant = {
 
 		EXIT_OK: 0,
 		EXIT_DB: 1,
@@ -37,6 +43,16 @@ export default {
 		EXIT_ERROR: 6,
 		EXIT_NEO4J: 7
 
-	}
+	};
 
-};
+	service.smtp = {
+		service: 'gmail',
+		pool: true,
+		auth: {
+			user: 'animus@cruciblelarp.com',
+			pass: 'password'
+
+		}
+	};
+
+});

@@ -2,7 +2,15 @@
 'use strict';
 
 import Hateoas from 'express-hateoas/src/main/hateoas';
+import vodoun from 'vodoun';
 
-import express from './express';
+export default vodoun.register('hateoas', [
+	'express'
 
-export default new Hateoas(express);
+], (service) => {
+
+	const express = this.express;
+
+	service.hateoas = new Hateoas(express);
+
+});

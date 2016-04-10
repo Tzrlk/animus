@@ -1,38 +1,43 @@
-/* globals require, module, __dirname */
+/* globals __dirname */
 
-import express from 'express';
-import fileStore from 'session-file-store';
-import errorHandler from 'errorhandler';
-import session from 'express-session';
-import helmet from 'helmet';
-import bodyParser from 'body-parser';
-import paths from 'path';
+import Express from 'express';
+import FileStore from 'session-file-store';
+import ErrorHandler from 'errorhandler';
+import Session from 'express-session';
+import Helmet from 'helmet';
+import BodyParser from 'body-parser';
+import vodoun from 'vodoun';
 
-import config from './config';
+const SessionFileStore = new FileStore(Session);
 
-let FileStore = fileStore(session);
+export default vodoun.register('express', [
+	'config'
 
-let app = express();
+], (service) => {
 
-app.use(errorHandler());
-app.use(bodyParser.json());
-app.use(helmet());
+	const config = this.config;
 
-app.use(session({
-	secret: config.session.secret,
-	saveUninitialized: true,
-	resave: false,
-	cookie: {
-		path: '/',
-		httpOnly: false,
-		secure: false,
-		maxAge: 3600000
-	},
-	store: new FileStore({
-		reapAsync: false
-	})
-}));
+	const app = service.app = new Express();
 
-app.use(express.static('src/server/static'));
+	app.use(new ErrorHandler());
+	app.use(BodyParser.json());
+	app.use(new Helmet());
 
-export default app;
+	app.use(Session({
+		secret: config.session.secret,
+		saveUninitialized: true,
+		resave: false,
+		cookie: {
+			path: '/',
+			httpOnly: false,
+			secure: false,
+			maxAge: 3600000
+		},
+		store: new SessionFileStore({
+			reapAsync: false
+		})
+	}));
+
+	app.use(Express.static('src/server/static'));
+
+});

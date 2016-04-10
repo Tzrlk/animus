@@ -1,81 +1,82 @@
-/* globals require, module, process */
+/* globals process, console */
 
-var _ = require('underscore');
+import _ from 'underscore';
+import vodoun from 'vodoun';
 
-import config from './config.js';
+export default vodoun.register('exit', [
+	'config'
 
-var listeners = [];
-var exitCode = 0;
+], (service) => {
 
-// Hook into all the process exit codes.
-var events = new Promise(function(resolve) {
+	const config = this.config;
 
-	var exiting = false;
-	function exit(event) {
-		if (!exiting) {
-			exiting = true;
-			resolve(event);
+	const listeners = [];
+	let exitCode = 0;
+
+	// Hook into all the process exit codes.
+	const events = new Promise((resolve) => {
+
+		let exiting = false;
+
+		function exit(event) {
+			if (!exiting) {
+				exiting = true;
+				resolve(event);
+			}
 		}
-	}
 
-	process.on('SIGTERM', exit);
-	process.on('SIGINT', exit);
-	process.on('SIGQUIT', exit);
-	process.on('uncaughtException', function(error) {
-		exitCode = config.constant.EXIT_ERROR;
-		console.error(error.stack);
-		exit.apply(exit, arguments);
+		process.on('SIGTERM', exit);
+		process.on('SIGINT', exit);
+		process.on('SIGQUIT', exit);
+		process.on('uncaughtException', (error) => {
+			exitCode = config.constant.EXIT_ERROR;
+			console.error(error.stack);
+			exit.apply(exit, arguments);
+		});
+
 	});
 
-});
+	// Resolve all the listeners as promises in one go.
+	const closing = events.then(() => Promise.all(_.collect(listeners, (listener) => new Promise(listener))));
 
-// Resolve all the listeners as promises in one go.
-var closing = events.then(function() {
-	return Promise.all(_.collect(listeners, function(listener) {
-		return new Promise(listener);
+	let timer = null;
+
+	// Make sure the exit doesn't take too long.
+	const timeout = events.then(() => new Promise((resolve) => {
+		return timer = setTimeout(() => resolve([
+			config.constant.EXIT_TIMEOUT
+
+		]), config.timeout.exit);
 	}));
-});
 
-var timer = null;
+	// Whichever process finishes first.
+	const first = new Promise((resolve) => {
 
-// Make sure the exit doesn't take too long.
-var timeout = events.then(function() {
-	return new Promise(function(resolve) {
-		return timer = setTimeout(function() {
-			return resolve([
-				config.constant.EXIT_TIMEOUT
-			]);
-		}, config.timeout.exit);
+		let triggered = false;
+
+		const trigger = (data) => {
+			if (!triggered) {
+				triggered = true;
+				resolve(data);
+			}
+		};
+
+		closing.then(trigger);
+		timeout.then(trigger);
+
 	});
-});
 
-// Whichever process finishes first.
-var first = new Promise(function(resolve) {
+	// regardless which finishes first, clear the timeout.
+	first.then(() => clearTimeout(timer));
 
-	var triggered = false;
-	function trigger(data) {
-		if (!triggered) {
-			triggered = true;
-			resolve(data);
-		}
+	// exit the process with the provided code.
+	first.then((list) => {
+		const max = _.max(exitCode, _.max(list));
+		process.exit(max);
+	});
+
+	service.register = (callback) => {
+		listeners.push(callback);
 	}
 
-	closing.then(trigger);
-	timeout.then(trigger);
-
 });
-
-// regardless which finishes first, clear the timeout.
-first.then(function() {
-	clearTimeout(timer);
-});
-
-// exit the process with the provided code.
-first.then(function(list) {
-	var max = _.max(exitCode, _.max(list));
-	process.exit(max);
-});
-
-export default function (callback) {
-	listeners.push(callback);
-}

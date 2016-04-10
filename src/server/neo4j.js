@@ -1,47 +1,51 @@
 /* globals require, module */
 
-import neo4j from 'neo4j-simple';
+import Neo4j from 'neo4j-simple';
+import vodoun from 'vodoun';
 
-import config from './config.js';
-import exit from './exit.js';
+export default vodoun.register('neo4j', [
+	'config'
 
-let connection = null;
+], (service) => {
 
-/**
- * @returns {Promise} A neo4j database connection.
- */
-export function connect() {
-	return new Promise((resolve, reject) => {
-		try {
+	const config = this.config;
 
-			if (!connection) {
-				connection = neo4j(config.database.url, {
-					idName: 'id'
-				});
+	/** @type {Neo4j} */
+	let connection = null;
+
+	/**
+	 * @returns {Promise<Neo4j>} A neo4j database connection.
+	 */
+	service.connect = () => {
+		return new Promise((resolve, reject) => {
+			try {
+
+				if (!connection) {
+					connection = new Neo4j(config.database.url, {
+						idName: 'id'
+					});
+				}
+
+				return resolve(connection);
+
+			} catch (error) {
+				return reject(error);
 			}
+		});
+	};
 
-			return resolve(connection);
-
-		} catch (error) {
-			return reject(error);
-		}
-	});
-}
-
-
-export default function query(query, params, transactionId) {
-	return connect().then((db) => {
-		return transactionId
-			? db.query(transactionId, query, params)
-			: db.query(query, params);
-	});
-}
-
-exit(function(resolve) {
-
-	if (!connection) {
-		console.log('Neo4j client has not been initialised.');
-		return resolve(config.constant.EXIT_OK);
+	/**
+	 * @param {String} query
+	 * @param {Object<String, ?>} params
+	 * @param {String} [transactionId]
+	 * @returns {Promise<>}
+	 */
+	service.query = (query, params, transactionId) => {
+		return connect().then((db) => {
+			return transactionId
+					? db.query(transactionId, query, params)
+					: db.query(query, params);
+		});
 	}
 
 });

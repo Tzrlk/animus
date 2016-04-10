@@ -2,39 +2,53 @@
 'use strict';
 
 import _ from 'underscore';
-import nodemailer from 'nodemailer';
+import NodeMailer from 'nodemailer';
+import Denodeify from 'es6-denodeify';
+import vodoun from 'vodoun';
 
-const smtpConfig = {
-	service: 'gmail',
-	pool: true,
-	auth: {
-		user: 'animus@cruciblelarp.com',
-		pass: 'password'
+const denodeify = new Denodeify(Promise);
 
+const bounce = (error) => {
+
+	if (error) {
+		throw error;
 	}
+
 };
 
-export const transport = nodemailer.createTransport(smtpConfig);
+export default vodoun.register('email', [
+	'config',
+	'queues',
+	'exit'
 
-//TODO: add in template management.
-//TODO: add in message queue usage.
+], (service) => {
 
-export default (options) => {
-	return new Promise((resolve, reject) => {
+	const config = this.config;
+	const queues = this.queues;
+	const exit = this.exit;
 
-		transport.sendMail(_.defaults(options, {
-			sender: '"Animus" <animus@cruciblelarp.com>'
+	const transport = NodeMailer.createTransport(config.smtp);
+	const sendMail = denodeify(transport.sendMail);
 
-		}), (error, info) => {
+	//TODO: add in template management.
 
-			if (error) {
-				reject(error);
-				return;
-			}
+	/**
+	 * @param {Object<String, ?>} options
+	 * @returns {Promise}
+	 */
+	service.send = (options) => {
+		return queues.push('mail', options);
+	};
 
-			resolve(info);
+	queues.processor('mail', (message) => sendMail(_.defaults(message, {
+		sender: '"Animus" <animus@cruciblelarp.com>'
 
-		});
+	})));
+
+	exit.register(() => {
+		return queues.close('mail');
 
 	});
-};
+
+});
+

@@ -1,97 +1,71 @@
-/* globals require, process, __dirname */
+/* globals process, __dirname, console */
 
-import config from './config';
-import http from './http';
-import express from './express.js';
-import './api/index.js';
+import vodoun from 'vodoun';
 
-var running = false;
+import Deference from './deference';
 
-/**
- * @param {Function} [onSuccess]
- * @param {Function} [onError]
- * @returns {Promise}
- */
-export function start(onSuccess, onError) {
+export default vodoun.register('server', [
+	'config',
+	'express',
+	'http'
 
-	if (running) {
-		var error = new Error('Server already running.');
-		onError && onError(error);
-		return Promise.reject(error);
-	}
+], (service) => {
 
-	var promise_resolve, promise_reject;
-	var promise = new Promise(function(resolve, reject) {
-		promise_resolve = resolve;
-		promise_reject = reject;
-	});
+	const config = this.config;
+	const express = this.express;
+	const http = this.http;
 
-	running = true;
-	http.listen(config.port, config.hostname, function() {
-		console.log('Started application on http://' + config.hostname + ':' + config.port + '/');
-		onSuccess && onSuccess();
-		return promise_resolve();
+	let running = false;
 
-	}).on('error', function(error) {
+	/**
+	 * @returns {Promise}
+	 */
+	service.start = () => {
 
-		console.error(error.stack);
-
-		running = false;
-		onError && onError();
-		return promise_reject(error);
-
-	});
-
-	return promise;
-
-}
-
-/**
- * @param {Function} [onSuccess]
- * @param {Function} [onError]
- * @returns {Promise}
- */
-export function stop(onSuccess, onError) {
-
-	if (!running) {
-		return Promise.reject(new Error('Server already stopped.'));
-	}
-
-	var promise_resolve;
-	var promise_reject;
-	var promise = new Promise(function(resolve, reject) {
-		promise_resolve = resolve;
-		promise_reject = reject;
-	});
-
-	http.close(function(error) {
-		console.log('Application shutdown complete.');
-
-		if (error) {
-			console.error(error.stack);
-			onError && onError();
-			return promise_reject(error);
+		if (running) {
+			return Promise.reject(new Error('Server already running.'));
 		}
 
-		running = false;
-		onSuccess && onSuccess();
-		return promise_resolve();
+		running = true;
+		return http.listen(config.port, config.hostname).then((result) => {
+			console.log(`Started application on http://${config.hostname}:${config.port}/`);
+			return result;
+
+		}, (error) => {
+			running = false;
+			throw error;
+
+		});
+
+	};
+
+	/**
+	 * @returns {Promise}
+	 */
+	service.stop = () => {
+
+		if (!running) {
+			return Promise.reject(new Error('Server isn\'t running.'));
+		}
+
+		return http.close().then(() => {
+			running = false;
+
+		});
+
+	};
+
+	express.app.use((error, request, response, next) => {
+
+		if (response.headersSent) {
+			return next(error);
+		}
+
+		console.error(error.stack);
+		response
+				.status(500)
+				.send('Something broke!');
 
 	});
-
-	return promise;
-
-}
-
-express.use(function(error, request, response, next) {
-
-	if (response.headersSent) {
-		return next(error);
-	}
-
-	console.error(error.stack);
-	response
-			.status(500)
-			.send('Something broke!');
 
 });

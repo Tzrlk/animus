@@ -1,41 +1,30 @@
 /* global */
 'use strict';
 
-export class Deference {
+export default class Deference extends Promise {
 
 	constructor() {
-		this._promise = new Promise((resolve, reject) => {
+		super((resolve, reject) => {
 			this._resolve = resolve;
 			this._reject = reject;
 		});
 	}
 
 	/**
-	 * @returns {Promise.resolve}
+	 * @template ResultType
+	 * @param {ResultType} [result]
+	 * @returns {Promise<ResultType>}
 	 */
-	get resolve() {
-		return this._resolve;
+	resolve(result) {
+		return this._resolve(result);
 	}
 
 	/**
-	 * @returns {Promise.reject}
+	 * @param {*} [error]
+	 * @returns {Promise<?>}
 	 */
-	get reject() {
-		return this._reject;
-	}
-
-	/**
-	 * @returns {Promise.then}
-	 */
-	get then() {
-		return this._promise.then;
-	}
-
-	/**
-	 * @returns {Promise.catch}
-	 */
-	get catch() {
-		return this._promise.catch;
+	reject(error) {
+		return this._reject(error);
 	}
 
 }

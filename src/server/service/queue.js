@@ -1,5 +1,6 @@
 /* globals */
 
+import _ from 'underscore';
 import vodoun from 'vodoun';
 import fileQueue from 'file-queue';
 
@@ -38,6 +39,7 @@ export default vodoun.register('queues', [], (service) => {
 	 * @type {Object<String, Queue<ItemType>>}
 	 */
 	const queues = {};
+	const processors = {};
 
 	/**
 	 * @param {String} queueName
@@ -117,5 +119,46 @@ export default vodoun.register('queues', [], (service) => {
 		});
 
 	});
+
+	/**
+	 * @typedef Object ProcessController
+	 * @property {Function<Promise>} start
+	 * @property {Function<Promise>} stop
+	 */
+	/**
+	 * @param queueName
+	 * @param processor
+	 * @return ProcessController
+	 */
+	service.processor = (queueName, processor) => {
+
+		if (processors[queueName]) {
+			throw new Error('A controller is already registered for that queue.');
+		}
+
+		processors[queueName] = processor;
+
+	};
+
+	/**
+	 * @param {String} [queueName]
+	 */
+	service.stop = (queueName) => {
+		//
+	};
+
+	const doProcessing = () => {
+
+		const promises = _.map(processors,
+				(processor, queueName) => service.pop(queueName).then(
+						(item) => processor(item)));
+
+		Promise.all(promises).then(() => {
+
+			process.nextTick(doProcessing);
+
+		});
+
+	};
 
 });
