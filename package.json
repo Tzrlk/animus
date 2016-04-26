@@ -85,6 +85,6 @@
     "traceur-runner": "^2.0.1",
     "traceur-source-maps": "^1.0.6",
     "underscore": "^1.8.3",
-    "vodoun": "latest"
+    "vodoun": "^1.0.0"
   }
 }
